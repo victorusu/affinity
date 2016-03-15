@@ -75,3 +75,13 @@ Hostname: localhost, Rank: 0, Thread: 3
 ```
 
 ### Running the unit tests for the cpuset wrapper
+
+To run the unit tests you will need to have installed the [Google Test](https://github.com/google/googletest) framework and set the ``GTEST_ROOT`` variable accordingly:
+```
+make GTEST_ROOT=/path/to/googletest
+```
+
+If the variable is not set, the tests will not be compiled. After successful compilation the tests executable will be placed inside the ``tests`` directory. You can run the unit tests as follows:
+```
+$ ./tests/test_cpuset
+```
