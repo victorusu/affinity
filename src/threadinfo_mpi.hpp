@@ -3,7 +3,7 @@
 #include <mpi.h>
 #include "threadinfo.hpp"
 
-// mpi_info specializations for MPI
+// Specializations for MPI
 
 template<>
 struct mpi_info<true>

@@ -3,7 +3,7 @@
 #include <omp.h>
 #include "threadinfo_base.hpp"
 
-// parallel_impl specializations for OpenMP
+// Specializations for OpenMP
 
 template<>
 struct openmp_info<true>

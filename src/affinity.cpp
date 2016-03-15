@@ -1,8 +1,5 @@
-#include <cstdio>
 #include <iostream>
 #include <memory>
-#include <sstream>
-#include <unistd.h>
 
 #include "threadinfo.hpp"
 
