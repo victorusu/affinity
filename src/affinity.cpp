@@ -25,7 +25,8 @@ int main(int argc, char **argv)
     if (get_rank() == 0) {
         for (int i = 0; i < num_procs; ++i) {
             for (int j = 0; j < num_threads; ++j) {
-                std::cout << threads[i*num_threads + j] << "\n";
+                std::cout << "Program: " << argv[0] << ": "
+                          << threads[i*num_threads + j] << "\n";
             }
         }
     }
