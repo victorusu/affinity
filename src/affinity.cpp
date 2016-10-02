@@ -18,15 +18,14 @@ int main(int argc, char **argv)
         int threadid = get_thread_num();
         int rank     = get_rank();
         int pos      = rank*num_threads + threadid;
-        threads[pos].reinit(rank, threadid);
+        threads[pos].reinit(rank, threadid, argv[0]);
     }
 
     gather_thread_info(threads, num_procs, num_threads);
     if (get_rank() == 0) {
         for (int i = 0; i < num_procs; ++i) {
             for (int j = 0; j < num_threads; ++j) {
-                std::cout << "Program: " << argv[0] << ": "
-                          << threads[i*num_threads + j] << "\n";
+                std::cout << threads[i*num_threads + j] << "\n";
             }
         }
     }
