@@ -18,7 +18,7 @@ int main(int argc, char **argv)
         int threadid = get_thread_num();
         int rank     = get_rank();
         int pos      = rank*num_threads + threadid;
-        threads[pos].reinit(rank, threadid);
+        threads[pos].reinit(rank, threadid, argv[0]);
     }
 
     gather_thread_info(threads, num_procs, num_threads);

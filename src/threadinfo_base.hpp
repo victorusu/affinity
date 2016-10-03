@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpuset.hpp"
+#include <cstring>
 
 #ifndef HOST_NAME_MAX
 #   define HOST_NAME_MAX 255
@@ -14,19 +15,21 @@ public:
         , threadid_(0)
     {
         hostname_[0] = 0;
+        tag_[0] = 0;
     }
 
-    thread_info(int rank, int tid)
+    thread_info(int rank, int tid, const char *tag)
     {
-        reinit(rank, tid);
+        reinit(rank, tid, tag);
     }
 
-    void reinit(int rank, int tid)
+    void reinit(int rank, int tid, const char *tag)
     {
         rank_ = rank;
         threadid_ = tid;
         get_hostname();
         affinity_ = get_cpu_affinity();
+        std::strncpy(tag_, tag, HOST_NAME_MAX);
     }
 
     int rank() const
@@ -59,6 +62,7 @@ private:
     int rank_;
     int threadid_;
     char hostname_[HOST_NAME_MAX];
+    char tag_[HOST_NAME_MAX];
     cpuset affinity_;
 };
 
@@ -77,7 +81,8 @@ bool operator!=(const thread_info &lhs, const thread_info &rhs)
 
 std::ostream &operator<<(std::ostream &os, const thread_info &tinfo)
 {
-    os << "Hostname: " << tinfo.hostname_ << ", Rank: " << tinfo.rank_
+    os << "Tag: " << tinfo.tag_
+       << ", Hostname: " << tinfo.hostname_ << ", Rank: " << tinfo.rank_
        << ", Thread: " << tinfo.threadid_ << "\n"
        << "    CPU affinity: " << tinfo.affinity_;
     return os;
