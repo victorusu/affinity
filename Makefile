@@ -52,20 +52,20 @@ MAKE_CXXFLAGS =
 MAKE_LDFLAGS  = -L.
 
 ifeq ($(DEBUG), 1)
-MAKE_CPPFLAGS += -D_DEBUG_
-MAKE_CXXFLAGS += -g -O0
+  MAKE_CPPFLAGS += -D_DEBUG_
+  MAKE_CXXFLAGS += -g -O0
 else
-MAKE_CPPFLAGS += -DNDEBUG
-MAKE_CXXFLAGS += -g -O3
+  MAKE_CPPFLAGS += -DNDEBUG
+  MAKE_CXXFLAGS += -g -O3
 endif
 
 ifeq ($(OPENMP), 1)
-MAKE_CXXFLAGS += $(OMP_FLAGS)
-MAKE_LDFLAGS  += $(OMP_FLAGS)
+  MAKE_CXXFLAGS += $(OMP_FLAGS)
+  MAKE_LDFLAGS  += $(OMP_FLAGS)
 endif
 
 ifeq ($(MPI), 1)
-MAKE_CPPFLAGS += -DUSE_MPI
+  MAKE_CPPFLAGS += -DUSE_MPI
 endif
 
 CPU_CPPFLAGS = $(MAKE_CPPFLAGS) $(CPPFLAGS)
@@ -78,7 +78,7 @@ LIBRARIES =
 
 PROGRAMS = affinity
 ifdef GTEST_ROOT
-PROGRAMS += tests/test_cpuset
+  PROGRAMS += tests/test_cpuset
 endif
 
 affinity_SOURCES = \
