@@ -38,6 +38,9 @@ else ifeq ($(toolchain), gnu)
     CXX = g++
   endif
   OMP_FLAGS = -Wall -fopenmp -std=c++11
+else ifeq ($(toolchain), clang)
+  CXX = clang++
+  OMP_FLAGS = -Wall -fopenmp -std=c++11
 endif
 
 
