@@ -5,9 +5,14 @@ ifdef PE_ENV
   CXX = CC
 endif
 
-
 ifeq ($(PE_ENV), CRAY)
   toolchain = cray
+
+  # CCE 9 and above use Clang frontend for C/C++ code
+  is_clang = $(shell $(CXX) --version 2> /dev/null | grep 'Cray clang')
+  ifneq ($(is_clang),)
+    toolchain = clang
+  endif
 else ifeq ($(PE_ENV), PGI)
   toolchain = pgi
 else ifeq ($(PE_ENV), INTEL)
@@ -20,9 +25,9 @@ toolchain ?= gnu
 
 ifeq ($(toolchain), cray)
   ifndef PE_ENV
-    CXX = crayc++
+    CXX = crayCC
   endif
-  OMP_FLAGS = -Wall -fopenmp -std=c++11
+  OMP_FLAGS = -homp -hstd=c++11
 else ifeq ($(toolchain), pgi)
   ifndef PE_ENV
     CXX = pgc++
@@ -39,7 +44,9 @@ else ifeq ($(toolchain), gnu)
   endif
   OMP_FLAGS = -Wall -fopenmp -std=c++11
 else ifeq ($(toolchain), clang)
-  CXX = clang++
+  ifndef PE_ENV
+    CXX = clang++
+  endif
   OMP_FLAGS = -Wall -fopenmp -std=c++11
 endif
 
@@ -105,7 +112,7 @@ all: $(PROGRAMS) $(LIBRARIES)
 
 %.o: %.cpp
 	$(CPU_COMPILE) $*.cpp -o $*.o
-	@gcc -MM $(CPU_CPPFLAGS) $*.cpp > $*.d
+	@gcc -std=c++11 -MM $(CPU_CPPFLAGS) $*.cpp > $*.d
 	@cp -f $*.d $*.d.tmp
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
 	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
