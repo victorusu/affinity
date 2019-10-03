@@ -1,37 +1,81 @@
 .PHONY: all clean
 .DEFAULT: all
 
+ifdef PE_ENV
+  CXX = CC
+endif
+
+ifeq ($(PE_ENV), CRAY)
+  toolchain = cray
+
+  # CCE 9 and above use Clang frontend for C/C++ code
+  is_clang = $(shell $(CXX) --version 2> /dev/null | grep 'Cray clang')
+  ifneq ($(is_clang),)
+    toolchain = clang
+  endif
+else ifeq ($(PE_ENV), PGI)
+  toolchain = pgi
+else ifeq ($(PE_ENV), INTEL)
+  toolchain = intel
+else ifeq ($(PE_ENV), GNU)
+  toolchain = gnu
+endif
+
+toolchain ?= gnu
+
+ifeq ($(toolchain), cray)
+  ifndef PE_ENV
+    CXX = crayCC
+  endif
+  OMP_FLAGS = -homp -hstd=c++11
+else ifeq ($(toolchain), pgi)
+  ifndef PE_ENV
+    CXX = pgc++
+  endif
+  OMP_FLAGS = -mp
+else ifeq ($(toolchain), intel)
+  ifndef PE_ENV
+    CXX = icpcp
+  endif
+  OMP_FLAGS = -Wall -qopenmp -std=c++11
+else ifeq ($(toolchain), gnu)
+  ifndef PE_ENV
+    CXX = g++
+  endif
+  OMP_FLAGS = -Wall -fopenmp -std=c++11
+else ifeq ($(toolchain), clang)
+  ifndef PE_ENV
+    CXX = clang++
+  endif
+  OMP_FLAGS = -Wall -fopenmp -std=c++11
+endif
+
+
 DEBUG  ?= 0
 OPENMP ?= 1
 MPI    ?= 0
-CXX     = g++
 MKDIR_P = mkdir -p
 RM      = /bin/rm
 
 MAKE_CPPFLAGS = -D_GNU_SOURCE -Iinclude -I${GTEST_ROOT}/include
-MAKE_CXXFLAGS = -Wall -std=c++11
-MAKE_LDFLAGS  = -L. -L${GTEST_ROOT} -lgtest
+MAKE_CXXFLAGS =
+MAKE_LDFLAGS  = -L.
 
 ifeq ($(DEBUG), 1)
-	MAKE_CPPFLAGS += -D_DEBUG_
-	MAKE_CXXFLAGS += -g -O0
+  MAKE_CPPFLAGS += -D_DEBUG_
+  MAKE_CXXFLAGS += -g -O0
 else
-	MAKE_CPPFLAGS += -DNDEBUG
-	MAKE_CXXFLAGS += -g -O3
+  MAKE_CPPFLAGS += -DNDEBUG
+  MAKE_CXXFLAGS += -g -O3
 endif
 
 ifeq ($(OPENMP), 1)
-	MAKE_CXXFLAGS += -fopenmp
-	MAKE_LDFLAGS  += -fopenmp
+  MAKE_CXXFLAGS += $(OMP_FLAGS)
+  MAKE_LDFLAGS  += $(OMP_FLAGS)
 endif
 
 ifeq ($(MPI), 1)
-	MAKE_CPPFLAGS += -DUSE_MPI
-endif
-
-# use dynamic linking in case of Cray wrapper
-ifeq ($(CXX), CC)
-	MAKE_LDFLAGS += -dynamic
+  MAKE_CPPFLAGS += -DUSE_MPI
 endif
 
 CPU_CPPFLAGS = $(MAKE_CPPFLAGS) $(CPPFLAGS)
@@ -44,7 +88,7 @@ LIBRARIES =
 
 PROGRAMS = affinity
 ifdef GTEST_ROOT
-	PROGRAMS += tests/test_cpuset
+  PROGRAMS += tests/test_cpuset
 endif
 
 affinity_SOURCES = \
@@ -52,26 +96,28 @@ affinity_SOURCES = \
 test_cpuset_SOURCES = \
 	tests/test_cpuset.cpp
 
-affinity_OBJECTS = $(affinity_SOURCES:%.cpp=%.o) $(LIBRARIES)
+affinity_OBJECTS = $(affinity_SOURCES:.cpp=.o) $(LIBRARIES)
+affinity_DEPS = $(affinity_OBJECTS:.o=.d)
 affinity_LIBS =
 
-test_cpuset_OBJECTS = $(test_cpuset_SOURCES:%.cpp=%.o) $(LIBRARIES)
+
+test_cpuset_OBJECTS = $(test_cpuset_SOURCES:.cpp=.o) $(LIBRARIES)
+test_cpuset_DEPS = $(test_cpuset_OBJECTS:.o=.d)
 test_cpuset_LIBS =
 
 all: $(PROGRAMS) $(LIBRARIES)
 
-DEPDIR = .deps
-df = $(DEPDIR)/$(*D)/$(*F)
-%.o: %.cpp
-	@$(MKDIR_P) $(DEPDIR)/$(*D)
-	$(CPU_COMPILE) -MD -o $@ $<
-	@cp $*.d $(df).P; \
-	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-		-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $(df).P; \
-	rm -f $*.d
+-include $(affinity_DEPS)
+-include $(test_cpuset_DEPS)
 
--include $(affinity_SOURCES:%.cpp=$(DEPDIR)/%.P)
--include $(test_cpuset_SOURCES:%.cpp=$(DEPDIR)/%.P)
+%.o: %.cpp
+	$(CPU_COMPILE) $*.cpp -o $*.o
+	@gcc -std=c++11 -MM $(CPU_CPPFLAGS) $*.cpp > $*.d
+	@cp -f $*.d $*.d.tmp
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
+
 
 affinity: $(affinity_OBJECTS) $(affinity_LIBS)
 	$(CXX) -o $@ $(affinity_OBJECTS) $(affinity_LIBS) $(CPU_LDFLAGS)
@@ -79,6 +125,6 @@ affinity: $(affinity_OBJECTS) $(affinity_LIBS)
 tests/test_cpuset: $(test_cpuset_OBJECTS) $(test_cpuset_LIBS)
 	$(CXX) -o $@ $(test_cpuset_OBJECTS) $(test_cpuset_LIBS) $(CPU_LDFLAGS)
 
+
 clean:
-	$(RM) -rf $(DEPDIR)
-	$(RM) -f $(PROGRAMS) $(affinity_OBJECTS) $(test_cpuset_OBJECTS)
+	$(RM) -f $(PROGRAMS) $(affinity_OBJECTS) $(affinity_DEPS) $(test_cpuset_OBJECTS)
