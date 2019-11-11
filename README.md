@@ -53,6 +53,8 @@ You can compile three versions of the tool:
 3. Hybrid (MPI+OpenMP)
   * ``make CXX=mpiCC OPENMP=1 MPI=1``
   * For the hybrid version, make sure to set ``CXX`` to a valid MPI C++ compiler.
+4. On a CRAY
+  * ``make CXX=CC CC=cc OPENMP=1 MPI=1``
 
 To enable debug compilation pass ``DEBUG=0`` to ``make``. Additionally, you can control compilation by setting ``CPPFLAGS``, ``CXXFLAGS`` and ``LDFLAGS`` as usual.
 
